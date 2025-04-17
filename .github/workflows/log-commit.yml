@@ -1,0 +1,68 @@
+name: Update progress chart
+
+on:
+  # Re‑generate the chart automatically whenever a feedback.json is added/changed
+  push:
+    branches: [ main ]
+    paths:
+      - 'english-log/**/feedback.json'
+  workflow_dispatch:
+
+jobs:
+  build-chart:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pandas matplotlib
+
+      - name: Generate progress chart
+        run: |
+          python - <<'PY'
+          import json, pathlib, pandas as pd, matplotlib.pyplot as plt
+          root = pathlib.Path('english-log')
+          records = []
+          for path in root.rglob('feedback.json'):
+              with open(path) as f:
+                  data = json.load(f)
+              records.append({
+                  'date': data['date'],
+                  'IELTS': data.get('ielts_band', None)
+              })
+          if not records:
+              print('No feedback files found. Skipping.')
+              exit()
+          df = pd.DataFrame(records).sort_values('date')
+          df['date'] = pd.to_datetime(df['date'])
+          plt.figure(figsize=(8,4))
+          plt.plot(df['date'], df['IELTS'], marker='o')
+          plt.title('Speaking Progress')
+          plt.xlabel('Date')
+          plt.ylabel('IELTS Band')
+          plt.grid(True)
+          pathlib.Path('assets').mkdir(exist_ok=True)
+          plt.tight_layout()
+          plt.savefig('assets/progress.png')
+          PY
+
+      - name: Commit chart
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet assets/progress.png; then
+            echo "Chart unchanged. Skipping commit."
+          else
+            git add assets/progress.png
+            git commit -m "Update progress chart"
+            git push
+          fi

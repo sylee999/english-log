@@ -1,81 +1,101 @@
-# 📈 English‑Log — Daily 30‑Minute English Practice
-Automating reading → speaking → feedback cycles (Mon–Fri 09:30 KST)  
-JSON‑based logs + GitHub Actions = visible, data‑driven progress 🚀
+# 📈 English‑Log — Daily 30‑Minute English Practice
+
+**A self‑contained template that lets you run a 30‑minute, AI‑assisted English lesson every weekday and track your speaking progress automatically.** Fork it, follow the prompt, and your GitHub repo becomes a living study journal.
 
 ---
 
-## 🗂 Folder Structure
+## 🚀 Why use this project?
+* **Zero vendor lock‑in** – just GitHub, your browser, and ChatGPT.
+* **Everything version‑controlled** – passage, transcript, feedback.
+* **Built‑in automations** – commits and progress chart handled by GitHub Actions.
+* **Future‑ready** – when ChatGPT’s *Model Context Protocol* (MCP) arrives, the model can push study files directly via a GitHub connector.
+
+---
+
+## ⚡ Quick Start
+1. **Fork or clone** this repo.
+2. **Open ChatGPT** and send the starter message **plus this README link** so the model can follow the workflow:
+
+   ```text
+   I’m using the English‑Log template at https://github.com/<your‑user>/english-log
+   Please follow the README workflow.
+   Level = B1   # ← initial CEFR level
+   Start        # ← begins the 30‑minute session
+   ```
+3. ChatGPT returns three code blocks—`reading.md`, `speaking.md`, `feedback.json`—save them under `english-log/YYYY-MM-DD/`, commit, and push.
+4. The *log‑commit* workflow uploads the files **and refreshes the progress chart automatically**.
+
+---
+
+## ⚙️ Initial Setup (one‑time)
+1. Fork/clone ✓  
+2. Ensure GitHub Actions are enabled (default).  
+3. No extra secrets—workflows use `GITHUB_TOKEN` automatically.
+
+---
+
+## 🔄 Daily Flow
+1. **Topic (optional)** – `Topic = travel`; skip to auto‑rotate themes.  
+2. **Reading (~10 min)** – ChatGPT provides a leveled passage → you read aloud.  
+   *Saved to `reading.md`.*  
+3. **Speaking (~15 min)** – AVM Q&A + 1‑min summary.  
+   *Transcript **and voice feedback** saved to `speaking.md`.*  
+4. **Feedback (~5 min)** – IELTS band + strengths & improvements.  
+   *Summary saved to `feedback.json`.*  
+5. Push the folder → workflow commits & updates chart.  
+6. Next session reads yesterday’s feedback to adjust difficulty.
+
+---
+
+## 🗂 Repository Layout
 ```text
-english-log/           # daily JSON logs: YYYY-MM-DD.json
-.github/
-└─ workflows/
-   ├─ log-commit.yml   # commits new JSON from ChatGPT sessions
-   └─ chart-update.yml # weekly graph generation
+english-log/
+└─ YYYY-MM-DD/        # one folder per study day
+   ├─ reading.md      # passage
+   ├─ speaking.md     # transcript + feedback
+   └─ feedback.json   # scores & notes
 assets/
-└─ progress.png        # auto‑generated score chart
+└─ progress.png       # auto‑generated chart
+.github/workflows/
+└─ log-commit.yml     # main automation
 README.md
 ```
 
 ---
 
-## 🔄 Daily Flow
-1. **Reading (~10 min)** — level‑matched passage (≈150 words) + quick T/F quiz  
-2. **Speaking (~15 min)** — voice conversation on the same topic + 1‑minute summary  
-3. **Feedback (~5 min)** — *IELTS Speaking* band, strengths & improvements  
-4. ChatGPT outputs a JSON file to **`english-log/`** and pushes it.
+## 📝 `feedback.json` Reference
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string | `YYYY-MM-DD` session date |
+| `reading_seconds` | number | Reading duration (s) |
+| `comprehension_score` | 0‑3 | T/F quiz correct |
+| `ielts_band` | 0‑9 | Speaking band estimate |
+| `words_per_min` | number | Fluency rate |
+| `strengths` | string[] | What went well |
+| `improvements` | string[] | Focus for next time |
+| `notes` | string[] | Pronunciation/pacing remarks |
+
+*Example*
+```json
+{
+  "date": "2025-04-22",
+  "reading_seconds": 138,
+  "comprehension_score": 3,
+  "ielts_band": 5.0,
+  "words_per_min": 96,
+  "strengths": ["clear structure", "good intonation"],
+  "improvements": ["expand vocabulary", "reduce pauses"]
+}
+```
 
 ---
 
-## 🏅 Scoring
-We adopt the **IELTS Speaking band (0–9)** — widely used, granular, and focused purely on speaking ability.
+## 📊 Progress Chart
+Whenever `feedback.json` changes, GitHub Actions regenerate **`assets/progress.png`** so you can see your growth at a glance.
+
+![Sample Progress Chart](assets/progress_sample.png)
 
 ---
 
-## 📊 Progress Chart
-A GitHub Action converts JSON → CSV → line chart (**assets/progress.png**) every Sunday at 00:00 KST.  
-The README always shows the latest chart for at‑a‑glance tracking.
-
-![Progress](assets/progress.png)
-
----
-
-## ⚙️ Setup
-1. **Add repository secrets**  
-   * `GH_PAT` with `repo` scope (or rely on the built‑in `GITHUB_TOKEN`).  
-2. **Copy the workflow files** in `.github/workflows/` from this template.  
-3. **Start your next ChatGPT session** — it will add today’s JSON; Actions manage all commits and chart updates automatically.
-
----
-
-## 🎤 Voice Mode Reading Guide
-You can complete the entire reading phase in ChatGPT’s Advanced Voice Mode (AVM) right inside your desktop browser.
-
-| Step | Learner Action | ChatGPT Action | What Gets Logged |
-|------|----------------|----------------|------------------|
-| 1. Text shown | Read the passage on‑screen | Provides a 150 ± 20‑word passage and a short vocabulary list | — |
-| 2. Say “Start” | Begin reading aloud | Records `startTime` | — |
-| 3. Say “Done” | Finish reading | Calculates `reading_seconds` | `reading_seconds` |
-| 4. Answer quiz | Say answers (“O X O”) | Parses answers, scores quiz | `comprehension_score` |
-| 5. Pronunciation note | — | Compares Whisper transcript to the text, notes missed or mis‑pronounced words | `notes[]` |
-| 6. JSON output | — | Prints the complete JSON block in the chat | You save it to `english-log/` |
-
-### Enabling Voice Mode
-1. Click the **🎤 mic icon** in any chat and select **Advanced Voice**.  
-2. Grant microphone permission in your browser.  
-3. Choose a voice and start speaking — each turn appears as a grey collapsed bubble (click to expand the transcript).
-
----
-
-## FAQ
-
-| Question | Answer |
-|----------|--------|
-| **Is the timing precise?** | `reading_seconds` is derived from chat timestamps. It is accurate to within a few seconds—good enough for progress tracking. |
-| **How accurate is pronunciation feedback?** | Whisper reliably flags obvious mispronunciations. For phoneme‑level analysis you would still need a dedicated app. |
-| **Do I have to copy JSON manually?** | Manual copy‑paste works fine. For zero‑click logging you can add a small userscript or local helper that detects the JSON block and pushes it via the PAT. |
-| **Can I keep the transcript visible?** | Yes. In **Settings → Voice** enable “Always show transcript,” or expand individual bubbles. |
-
----
-
-*Every JSON file is one brick in your fluency wall — keep stacking!* 🧱
+> *Happy learning! Every folder is one brick in your fluency wall.* 🧱
 
